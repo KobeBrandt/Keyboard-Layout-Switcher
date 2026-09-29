@@ -3,7 +3,6 @@
 [![Build](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/actions/workflows/build.yml/badge.svg)](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/actions/workflows/build.yml)
 
 Windows tray app that picks the keyboard layout based on which keyboards are connected.
-Plug in your US keyboard and get US; unplug it and fall back to the laptop's built-in layout.
 
 ## Features
 
