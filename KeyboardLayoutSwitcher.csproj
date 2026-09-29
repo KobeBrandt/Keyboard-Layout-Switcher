@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>KeyboardLayoutSwitcher</AssemblyName>
+    <RootNamespace>KeyboardLayoutSwitcher</RootNamespace>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Version>1.0.0</Version>
+    <Product>Keyboard Layout Switcher</Product>
+    <Description>Switches the Windows keyboard layout based on which keyboards are connected.</Description>
+    <Authors>Kobe Brandt</Authors>
+    <Copyright>Copyright (c) 2026 Kobe Brandt</Copyright>
+    <RepositoryUrl>https://github.com/KobeBrandt/KeyboardLayoutSwitcher</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
