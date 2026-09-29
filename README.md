@@ -1,6 +1,6 @@
 # Keyboard Layout Switcher
 
-[![Build](https://github.com/KobeBrandt/KeyboardLayoutSwitcher/actions/workflows/build.yml/badge.svg)](https://github.com/KobeBrandt/KeyboardLayoutSwitcher/actions/workflows/build.yml)
+[![Build](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/actions/workflows/build.yml/badge.svg)](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/actions/workflows/build.yml)
 
 Windows tray app that picks the keyboard layout based on which keyboards are connected.
 Plug in your US keyboard and get US; unplug it and fall back to the laptop's built-in layout.
@@ -17,7 +17,7 @@ Plug in your US keyboard and get US; unplug it and fall back to the laptop's bui
 ## Install
 
 1. Install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
-2. Download `KeyboardLayoutSwitcher.exe` from the [latest release](https://github.com/KobeBrandt/KeyboardLayoutSwitcher/releases/latest).
+2. Download `KeyboardLayoutSwitcher.exe` from the [latest release](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/releases/latest).
 3. Run it. The app lives in the notification area; open Settings from its tray icon.
 
 Settings are stored in `%APPDATA%\KeyboardLayoutSwitcher\config.json`.

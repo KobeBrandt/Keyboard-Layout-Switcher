@@ -15,7 +15,7 @@
     <Description>Switches the Windows keyboard layout based on which keyboards are connected.</Description>
     <Authors>Kobe Brandt</Authors>
     <Copyright>Copyright (c) 2026 Kobe Brandt</Copyright>
-    <RepositoryUrl>https://github.com/KobeBrandt/KeyboardLayoutSwitcher</RepositoryUrl>
+    <RepositoryUrl>https://github.com/KobeBrandt/Keyboard-Layout-Switcher</RepositoryUrl>
   </PropertyGroup>
 
 </Project>
