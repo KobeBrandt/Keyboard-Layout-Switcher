@@ -45,16 +45,36 @@ public sealed class AppConfig
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Could not read {FilePath}:\n{ex.Message}\n\nStarting with empty settings.",
+            // Keep the unreadable file, so the next save does not overwrite the user's settings for good.
+            var backup = Path.Combine(FolderPath, "config.bad.json");
+            var kept = TryMove(FilePath, backup);
+            MessageBox.Show($"Could not read {FilePath}:\n{ex.Message}\n\n"
+                + (kept ? $"The file was saved as {backup}. " : "") + "Starting with empty settings.",
                 "Keyboard Layout Switcher", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         return new AppConfig();
     }
 
+    private static bool TryMove(string source, string destination)
+    {
+        try
+        {
+            File.Move(source, destination, overwrite: true);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     public void Save()
     {
         Directory.CreateDirectory(FolderPath);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOptions));
+        // Write a temporary file first, so a crash during the write cannot leave a half-written config.
+        var temporary = FilePath + ".tmp";
+        File.WriteAllText(temporary, JsonSerializer.Serialize(this, JsonOptions));
+        File.Move(temporary, FilePath, overwrite: true);
     }
 
     public AppConfig Clone() =>
