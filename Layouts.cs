@@ -53,17 +53,19 @@ internal static class Layouts
     /// <summary>
     /// Switches the active layout and makes it the default for windows that open later.
     /// With the default Windows setting (one input method for all apps) this changes the layout everywhere.
+    /// Returns false when the foreground window could not be switched, for example because it runs as administrator.
     /// </summary>
-    public static void Activate(InputLanguage language)
+    public static bool Activate(InputLanguage language)
     {
         var hkl = language.Handle;
         Native.SystemParametersInfo(Native.SPI_SETDEFAULTINPUTLANG, 0, ref hkl, Native.SPIF_SENDCHANGE);
 
         var foreground = Native.GetForegroundWindow();
-        if (foreground != IntPtr.Zero)
-            Native.PostMessage(foreground, Native.WM_INPUTLANGCHANGEREQUEST, IntPtr.Zero, hkl);
+        var posted = foreground == IntPtr.Zero
+            || Native.PostMessage(foreground, Native.WM_INPUTLANGCHANGEREQUEST, IntPtr.Zero, hkl);
 
         // Also switch this process, so the tray icon and settings window agree with the rest of the system.
         InputLanguage.CurrentInputLanguage = language;
+        return posted;
     }
 }

@@ -25,6 +25,12 @@ internal sealed class TrayApp : ApplicationContext
     // so a manual Win+Space switch survives unrelated devices (like a mouse) being plugged in.
     private IntPtr _lastTarget;
 
+    // Set when the foreground window refused the switch (it runs as administrator).
+    // The layout is applied again as soon as another window comes to the front.
+    private bool _retryOnForeground;
+    private readonly Native.WinEventProc _foregroundProc;
+    private readonly IntPtr _foregroundHook;
+
     public TrayApp()
     {
         _config = AppConfig.Load();
@@ -65,6 +71,11 @@ internal sealed class TrayApp : ApplicationContext
         SystemEvents.SessionSwitch += OnSessionSwitch;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
+        // Keep the delegate in a field so the garbage collector does not free it while Windows still calls it.
+        _foregroundProc = OnForegroundChanged;
+        _foregroundHook = Native.SetWinEventHook(Native.EVENT_SYSTEM_FOREGROUND, Native.EVENT_SYSTEM_FOREGROUND,
+            IntPtr.Zero, _foregroundProc, 0, 0, Native.WINEVENT_OUTOFCONTEXT);
+
         Evaluate(force: true, notify: false);
 
         if (_config.DefaultLayout == null && _config.Keyboards.Count == 0)
@@ -87,6 +98,12 @@ internal sealed class TrayApp : ApplicationContext
     {
         if (e.Mode == PowerModes.Resume)
             ReapplySoon();
+    }
+
+    private void OnForegroundChanged(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
+    {
+        if (_retryOnForeground)
+            Evaluate(force: true, notify: false);
     }
 
     /// <summary>
@@ -124,7 +141,7 @@ internal sealed class TrayApp : ApplicationContext
 
         if (force || changed)
         {
-            Layouts.Activate(target);
+            _retryOnForeground = !Layouts.Activate(target);
             if (notify && changed && _config.ShowNotifications)
                 _tray.ShowBalloonTip(2000, Layouts.Describe(target), reason, ToolTipIcon.None);
         }
@@ -219,6 +236,8 @@ internal sealed class TrayApp : ApplicationContext
         {
             SystemEvents.SessionSwitch -= OnSessionSwitch;
             SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            if (_foregroundHook != IntPtr.Zero)
+                Native.UnhookWinEvent(_foregroundHook);
             _tray.Visible = false;
             _tray.Dispose();
             _debounce.Dispose();
