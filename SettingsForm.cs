@@ -22,6 +22,8 @@ internal sealed class SettingsForm : Form
     private readonly Button _down = new() { Text = "Move &down" };
     private readonly CheckBox _notifications = new() { Text = "Show a notification when the layout changes", AutoSize = true };
     private readonly CheckBox _startup = new() { Text = "Start with Windows", AutoSize = true };
+    private Font? _sectionFont;
+    private Font? _boldFont;
     private readonly System.Windows.Forms.Timer _statusTimer = new() { Interval = 2000 };
     private readonly ToolTip _tips = new();
 
@@ -201,12 +203,13 @@ internal sealed class SettingsForm : Form
 
     private Label SectionLabel(string text) => new()
     {
-        Text = text, AutoSize = true, Font = new Font(Font.FontFamily, 10.5f, FontStyle.Bold), Margin = new Padding(0, 16, 0, 0),
+        Text = text, AutoSize = true, Margin = new Padding(0, 16, 0, 0),
+        Font = _sectionFont ??= new Font(Font.FontFamily, 10.5f, FontStyle.Bold),
     };
 
     private Panel ActiveBanner()
     {
-        _activeLayout.Font = new Font(Font, FontStyle.Bold);
+        _activeLayout.Font = _boldFont ??= new Font(Font, FontStyle.Bold);
         _activeReason.ForeColor = SystemColors.GrayText;
         var text = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Anchor = AnchorStyles.Left, Margin = Padding.Empty };
         text.Controls.Add(_activeLayout);
@@ -418,6 +421,8 @@ internal sealed class SettingsForm : Form
         _tips.Dispose();
         _activeIcon.Image?.Dispose();
         Icon?.Dispose();
+        _sectionFont?.Dispose();
+        _boldFont?.Dispose();
         base.OnFormClosed(e);
     }
 

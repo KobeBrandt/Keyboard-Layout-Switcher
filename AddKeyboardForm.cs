@@ -158,6 +158,9 @@ internal sealed class AddKeyboardForm : Form
         _watcher.KeyFromDevice -= OnKeyFromDevice;
         _watcher.StopCapture();
         _dots.Dispose();
+        // Fonts assigned to controls are not disposed with them.
+        _glyph.Font.Dispose();
+        _prompt.Font.Dispose();
         base.OnFormClosed(e);
     }
 }
