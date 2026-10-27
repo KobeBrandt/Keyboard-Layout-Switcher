@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace KeyboardLayoutSwitcher;
 
@@ -42,7 +41,7 @@ internal static class Keyboards
     /// Converts a device interface path such as <c>\\?\HID#VID_046D&amp;PID_C232#2&amp;1a87&amp;0&amp;0000#{guid}</c>
     /// to its device instance ID <c>HID\VID_046D&amp;PID_C232\2&amp;1a87&amp;0&amp;0000</c>.
     /// </summary>
-    private static string ToInstanceId(string devicePath)
+    internal static string ToInstanceId(string devicePath)
     {
         var trimmed = devicePath.StartsWith(@"\\?\") ? devicePath[4..] : devicePath;
         var classGuid = trimmed.LastIndexOf("#{", StringComparison.Ordinal);
@@ -80,10 +79,11 @@ internal static class Keyboards
         Native.GetRawInputDeviceInfo(hDevice, Native.RIDI_DEVICENAME, null, ref chars);
         if (chars == 0)
             return null;
-        var sb = new StringBuilder((int)chars + 1);
-        if (Native.GetRawInputDeviceInfo(hDevice, Native.RIDI_DEVICENAME, sb, ref chars) == uint.MaxValue)
+        var buffer = new char[chars + 1];
+        var copied = Native.GetRawInputDeviceInfo(hDevice, Native.RIDI_DEVICENAME, buffer, ref chars);
+        if (copied == uint.MaxValue)
             return null;
-        return sb.ToString();
+        return new string(buffer).TrimEnd('\0');
     }
 
     /// <summary>
@@ -109,13 +109,13 @@ internal static class Keyboards
             if (handle.IsInvalid)
                 return null;
 
-            var product = new StringBuilder(256);
-            var manufacturer = new StringBuilder(256);
-            var hasProduct = Native.HidD_GetProductString(handle, product, product.Capacity * 2);
-            var hasManufacturer = Native.HidD_GetManufacturerString(handle, manufacturer, manufacturer.Capacity * 2);
+            var product = new char[256];
+            var manufacturer = new char[256];
+            var hasProduct = Native.HidD_GetProductString(handle, product, product.Length * 2);
+            var hasManufacturer = Native.HidD_GetManufacturerString(handle, manufacturer, manufacturer.Length * 2);
 
-            var productText = hasProduct ? product.ToString().Trim() : "";
-            var manufacturerText = hasManufacturer ? manufacturer.ToString().Trim() : "";
+            var productText = hasProduct ? ToText(product) : "";
+            var manufacturerText = hasManufacturer ? ToText(manufacturer) : "";
             if (productText.Length == 0)
                 return null;
             if (manufacturerText.Length > 0 && !productText.Contains(manufacturerText, StringComparison.OrdinalIgnoreCase))
@@ -126,6 +126,13 @@ internal static class Keyboards
         {
             return null;
         }
+    }
+
+    /// <summary>Text up to the first null character, trimmed.</summary>
+    private static string ToText(char[] buffer)
+    {
+        var end = Array.IndexOf(buffer, '\0');
+        return new string(buffer, 0, end >= 0 ? end : buffer.Length).Trim();
     }
 
     /// <summary>Builds a fallback display name from the vendor and product IDs in the hardware ID.</summary>
