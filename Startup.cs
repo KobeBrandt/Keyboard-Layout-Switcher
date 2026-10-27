@@ -27,4 +27,15 @@ internal static class Startup
                 key.DeleteValue(ValueName, throwOnMissingValue: false);
         }
     }
+
+    /// <summary>
+    /// When start with Windows is on but points to another path (the exe was moved),
+    /// points it to this exe again.
+    /// </summary>
+    public static void RepairPath()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
+        if (key?.GetValue(ValueName) is string value && !string.Equals(value, Command, StringComparison.OrdinalIgnoreCase))
+            key.SetValue(ValueName, Command);
+    }
 }

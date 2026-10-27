@@ -28,6 +28,14 @@ internal sealed class TrayApp : ApplicationContext
     public TrayApp()
     {
         _config = AppConfig.Load();
+        try
+        {
+            Startup.RepairPath();
+        }
+        catch (Exception)
+        {
+            // Not fatal: start with Windows keeps the old path until the user saves the settings.
+        }
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_status);
