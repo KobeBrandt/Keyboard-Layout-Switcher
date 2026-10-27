@@ -15,10 +15,19 @@ Windows tray app that picks the keyboard layout based on which keyboards are con
 
 ## Install
 
-1. Install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
-   The exe is small because it uses this shared runtime; without it, Windows asks you to install it on first start.
-2. Download `KeyboardLayoutSwitcher.exe` from the [latest release](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/releases/latest).
-3. Run it. The app lives in the notification area; open Settings from its tray icon.
+1. Download `KeyboardLayoutSwitcher.exe` from the [latest release](https://github.com/KobeBrandt/Keyboard-Layout-Switcher/releases/latest).
+2. Run it and choose **Yes** to install. No admin rights and no .NET runtime are needed.
+3. The app lives in the notification area; open Settings from its tray icon.
+
+Installing puts the app in `%LOCALAPPDATA%\Programs\KeyboardLayoutSwitcher`, adds it to the Start menu,
+turns on start with Windows, and adds an entry to Settings > Apps > Installed apps.
+Choose **No** to run the exe from where it is without installing.
+
+To update, download and run the new exe; it replaces the installed copy.
+To uninstall, use Settings > Apps > Installed apps. You can choose to keep your settings.
+
+Windows SmartScreen may warn that the exe is from an unknown publisher, because it is not code-signed.
+Choose "More info" and then "Run anyway".
 
 Settings are stored in `%APPDATA%\KeyboardLayoutSwitcher\config.json`. If that file cannot be read,
 it is kept as `config.bad.json` and the app starts with empty settings.
@@ -31,10 +40,11 @@ The log (`log.txt` in the same folder) records each device change and which layo
 Requires the .NET 10 SDK.
 
 ```
-dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o publish
+dotnet publish KeyboardLayoutSwitcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish
 ```
 
-The executable is written to `publish\KeyboardLayoutSwitcher.exe`.
+The executable is written to `publish\KeyboardLayoutSwitcher.exe` (about 50 MB, because it includes the .NET runtime).
+Only this published single-file exe offers to install itself; `dotnet run` and debug builds never do.
 
 Run the unit tests with:
 
