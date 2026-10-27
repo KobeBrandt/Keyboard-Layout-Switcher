@@ -28,9 +28,13 @@ public sealed class AppConfig
     /// </summary>
     public (KeyboardRule? Rule, InputLanguage? Layout) Pick(ISet<string> connectedIds)
     {
-        var rule = Keyboards.FirstOrDefault(k => connectedIds.Contains(k.HardwareId) && Layouts.Resolve(k.Layout) != null);
+        var rule = PickRule(connectedIds, layout => Layouts.Resolve(layout) != null);
         return rule != null ? (rule, Layouts.Resolve(rule.Layout)) : (null, Layouts.Resolve(DefaultLayout));
     }
+
+    /// <summary>The first connected keyboard in the list whose layout is installed, or null for the default layout.</summary>
+    public KeyboardRule? PickRule(ISet<string> connectedIds, Func<LayoutRef, bool> isInstalled) =>
+        Keyboards.FirstOrDefault(k => connectedIds.Contains(k.HardwareId) && isInstalled(k.Layout));
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 

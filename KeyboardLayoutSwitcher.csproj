@@ -20,4 +20,12 @@
     <RepositoryUrl>https://github.com/KobeBrandt/Keyboard-Layout-Switcher</RepositoryUrl>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The test project lives below this folder; keep its files out of the app. -->
+    <Compile Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <None Remove="tests\**" />
+    <InternalsVisibleTo Include="KeyboardLayoutSwitcher.Tests" />
+  </ItemGroup>
+
 </Project>
