@@ -12,7 +12,7 @@
     <AssemblyName>KeyboardLayoutSwitcher</AssemblyName>
     <RootNamespace>KeyboardLayoutSwitcher</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Product>Keyboard Layout Switcher</Product>
     <Description>Switches the Windows keyboard layout based on which keyboards are connected.</Description>
     <Authors>Kobe Brandt</Authors>
