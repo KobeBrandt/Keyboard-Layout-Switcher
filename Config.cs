@@ -19,6 +19,9 @@ public sealed class AppConfig
 
     public bool ShowNotifications { get; set; } = true;
 
+    /// <summary>Writes switch decisions to <see cref="Log.FilePath"/> to help find out why a layout did not change.</summary>
+    public bool EnableLog { get; set; }
+
     /// <summary>
     /// Picks the layout for the connected keyboards: the first connected keyboard in the list
     /// whose layout is installed, otherwise the default layout. Rule is null for the default.

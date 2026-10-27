@@ -22,6 +22,8 @@ internal sealed class SettingsForm : Form
     private readonly Button _down = new() { Text = "Move &down" };
     private readonly CheckBox _notifications = new() { Text = "Show a notification when the layout changes", AutoSize = true };
     private readonly CheckBox _startup = new() { Text = "Start with Windows", AutoSize = true };
+    private readonly CheckBox _log = new() { Text = "Write a diagnostic log", AutoSize = true };
+    private readonly LinkLabel _openLog = new() { Text = "Open log folder", AutoSize = true, Margin = new Padding(20, 0, 3, 3) };
     private Font? _sectionFont;
     private Font? _boldFont;
     private readonly System.Windows.Forms.Timer _statusTimer = new() { Interval = 2000 };
@@ -79,6 +81,8 @@ internal sealed class SettingsForm : Form
         _defaultLayout.SelectedIndex = defaultLanguage != null ? _layouts.IndexOf(defaultLanguage) : -1;
         _notifications.Checked = _config.ShowNotifications;
         _startup.Checked = Startup.IsEnabled;
+        _log.Checked = _config.EnableLog;
+        _tips.SetToolTip(_log, $"Records why and when the layout changes in {Log.FilePath}");
 
         const int rows = 10;
         const int listRow = 3;
@@ -139,6 +143,8 @@ internal sealed class SettingsForm : Form
         var options = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(0, 4, 0, 0) };
         options.Controls.Add(_notifications);
         options.Controls.Add(_startup);
+        options.Controls.Add(_log);
+        options.Controls.Add(_openLog);
         root.Controls.Add(options);
 
         var ok = new Button { Text = "Save", DialogResult = DialogResult.OK, AutoSize = true, Padding = new Padding(16, 2, 16, 2) };
@@ -163,6 +169,7 @@ internal sealed class SettingsForm : Form
         _selectedLayout.SelectedIndexChanged += (_, _) => ChangeSelectedLayout();
         _defaultLayout.SelectedIndexChanged += (_, _) => UpdateStatus();
         ok.Click += (_, _) => SaveOptions();
+        _openLog.LinkClicked += (_, _) => OpenLogFolder();
         _watcher.DevicesChanged += OnDevicesChanged;
         // Bluetooth keyboards connect and disconnect without a device event, so poll the status column.
         _statusTimer.Tick += (_, _) => UpdateStatus();
@@ -407,6 +414,21 @@ internal sealed class SettingsForm : Form
         if (_defaultLayout.SelectedIndex >= 0)
             _config.DefaultLayout = Layouts.ToRef(_layouts[_defaultLayout.SelectedIndex]);
         _config.ShowNotifications = _notifications.Checked;
+        _config.EnableLog = _log.Checked;
+    }
+
+    private void OpenLogFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppConfig.FolderPath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AppConfig.FolderPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Could not open {AppConfig.FolderPath}:\n{ex.Message}", Text,
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void OnDevicesChanged(object? sender, EventArgs e)

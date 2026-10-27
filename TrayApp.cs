@@ -34,13 +34,15 @@ internal sealed class TrayApp : ApplicationContext
     public TrayApp()
     {
         _config = AppConfig.Load();
+        Log.Enabled = _config.EnableLog;
+        Log.Write("Started");
         try
         {
             Startup.RepairPath();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Not fatal: start with Windows keeps the old path until the user saves the settings.
+            Log.Write($"Could not repair the start with Windows path: {ex.Message}");
         }
 
         var menu = new ContextMenuStrip();
@@ -62,6 +64,7 @@ internal sealed class TrayApp : ApplicationContext
         };
         _watcher.DevicesChanged += (_, _) =>
         {
+            Log.Write("Device change");
             _debounce.Stop();
             _debounce.Start();
         };
@@ -91,19 +94,27 @@ internal sealed class TrayApp : ApplicationContext
     {
         if (e.Reason is SessionSwitchReason.SessionUnlock or SessionSwitchReason.SessionLogon
             or SessionSwitchReason.ConsoleConnect or SessionSwitchReason.RemoteConnect)
+        {
+            Log.Write($"Session switch: {e.Reason}");
             ReapplySoon();
+        }
     }
 
     private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode == PowerModes.Resume)
+        {
+            Log.Write("Resume from sleep");
             ReapplySoon();
+        }
     }
 
     private void OnForegroundChanged(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
     {
-        if (_retryOnForeground)
-            Evaluate(force: true, notify: false);
+        if (!_retryOnForeground)
+            return;
+        Log.Write("Foreground window changed; applying the layout that was refused before");
+        Evaluate(force: true, notify: false);
     }
 
     /// <summary>
@@ -142,6 +153,8 @@ internal sealed class TrayApp : ApplicationContext
         if (force || changed)
         {
             _retryOnForeground = !Layouts.Activate(target);
+            Log.Write($"Applied {Layouts.Describe(target)} ({reason}; force: {force}, changed: {changed})"
+                + (_retryOnForeground ? "; the foreground window refused it, will retry when it changes" : ""));
             if (notify && changed && _config.ShowNotifications)
                 _tray.ShowBalloonTip(2000, Layouts.Describe(target), reason, ToolTipIcon.None);
         }
@@ -214,6 +227,7 @@ internal sealed class TrayApp : ApplicationContext
             if (_settings.ShowDialog() == DialogResult.OK)
             {
                 _config = _settings.Config;
+                Log.Enabled = _config.EnableLog;
                 try
                 {
                     _config.Save();
