@@ -162,16 +162,19 @@ internal sealed class TrayApp : ApplicationContext
             return;
         _iconCode = code;
         var oldIcon = _tray.Icon;
-        _tray.Icon = CreateIcon(code);
+        // Draw at the size the notification area uses, so the icon stays sharp at any display scaling.
+        _tray.Icon = CreateIcon(code, SystemInformation.SmallIconSize.Width);
         oldIcon?.Dispose();
     }
 
     /// <summary>Draws a small key cap with the layout's country code, e.g. "US" or "BE".</summary>
-    internal static Icon CreateIcon(string text)
+    internal static Icon CreateIcon(string text, int size = 32)
     {
-        using var bitmap = new Bitmap(32, 32);
+        using var bitmap = new Bitmap(size, size);
         using (var g = Graphics.FromImage(bitmap))
         {
+            // Draw in a 32 x 32 grid and scale it to the requested size.
+            g.ScaleTransform(size / 32f, size / 32f);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             using var path = new GraphicsPath();
@@ -184,8 +187,9 @@ internal sealed class TrayApp : ApplicationContext
             using var fill = new SolidBrush(Color.FromArgb(0x25, 0x63, 0xEB));
             g.FillPath(fill, path);
 
-            using var font = new Font("Segoe UI", text.Length > 1 ? 13f : 16f, FontStyle.Bold, GraphicsUnit.Pixel);
-            var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            var fontSize = text.Length switch { <= 1 => 16f, 2 => 13f, _ => 10f };
+            using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
             g.DrawString(text, font, Brushes.White, new RectangleF(0, 1, 32, 32), format);
         }
         // Clone so the returned icon owns its handle and Dispose frees it.

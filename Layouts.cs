@@ -33,12 +33,39 @@ internal static class Layouts
             ?? installed.FirstOrDefault(l => l.Culture.Name == layout.Culture && l.LayoutName == layout.LayoutName);
     }
 
-    /// <summary>Short text for the tray icon, e.g. "US" or "BE".</summary>
+    /// <summary>
+    /// Short text for the tray icon, e.g. "US" or "BE". When several installed layouts share a code
+    /// (US and US Dvorak), the second one gets "US2", the third "US3", and so on.
+    /// </summary>
     public static string ShortCode(InputLanguage language)
     {
-        var name = language.Culture.Name;
-        var dash = name.LastIndexOf('-');
-        var code = dash >= 0 ? name[(dash + 1)..] : name;
+        var installed = Installed();
+        var index = installed.FindIndex(l => l.Handle == language.Handle);
+        return index < 0
+            ? CultureCode(language.Culture.Name)
+            : ShortCodes(installed.Select(l => l.Culture.Name).ToList())[index];
+    }
+
+    /// <summary>Short codes for a list of culture names, numbered when codes repeat.</summary>
+    public static List<string> ShortCodes(IReadOnlyList<string> cultureNames)
+    {
+        var seen = new Dictionary<string, int>();
+        var result = new List<string>(cultureNames.Count);
+        foreach (var name in cultureNames)
+        {
+            var code = CultureCode(name);
+            var count = seen.GetValueOrDefault(code) + 1;
+            seen[code] = count;
+            result.Add(count == 1 ? code : $"{code}{count}");
+        }
+        return result;
+    }
+
+    /// <summary>The region part of a culture name, e.g. "BE" for "nl-BE", at most two letters.</summary>
+    public static string CultureCode(string cultureName)
+    {
+        var dash = cultureName.LastIndexOf('-');
+        var code = dash >= 0 ? cultureName[(dash + 1)..] : cultureName;
         return code.Length > 2 ? code[..2].ToUpperInvariant() : code.ToUpperInvariant();
     }
 
