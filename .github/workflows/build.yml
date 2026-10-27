@@ -32,8 +32,9 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             version_arg="-p:Version=${GITHUB_REF_NAME#v}"
           fi
-          dotnet publish KeyboardLayoutSwitcher.csproj -c Release -r win-x64 --self-contained false \
-            -p:PublishSingleFile=true $version_arg -o publish
+          # Self-contained: users need no .NET runtime, only this one exe.
+          dotnet publish KeyboardLayoutSwitcher.csproj -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true $version_arg -o publish
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
