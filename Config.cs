@@ -19,6 +19,16 @@ public sealed class AppConfig
 
     public bool ShowNotifications { get; set; } = true;
 
+    /// <summary>
+    /// Picks the layout for the connected keyboards: the first connected keyboard in the list
+    /// whose layout is installed, otherwise the default layout. Rule is null for the default.
+    /// </summary>
+    public (KeyboardRule? Rule, InputLanguage? Layout) Pick(ISet<string> connectedIds)
+    {
+        var rule = Keyboards.FirstOrDefault(k => connectedIds.Contains(k.HardwareId) && Layouts.Resolve(k.Layout) != null);
+        return rule != null ? (rule, Layouts.Resolve(rule.Layout)) : (null, Layouts.Resolve(DefaultLayout));
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public static string FolderPath =>

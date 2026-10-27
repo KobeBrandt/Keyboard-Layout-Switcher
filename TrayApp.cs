@@ -102,8 +102,7 @@ internal sealed class TrayApp : ApplicationContext
     private void Evaluate(bool force, bool notify)
     {
         var connected = Keyboards.GetConnected().Select(k => k.HardwareId).ToHashSet();
-        var rule = _config.Keyboards.FirstOrDefault(k => connected.Contains(k.HardwareId) && Layouts.Resolve(k.Layout) != null);
-        var target = rule != null ? Layouts.Resolve(rule.Layout) : Layouts.Resolve(_config.DefaultLayout);
+        var (rule, target) = _config.Pick(connected);
 
         if (target == null)
         {

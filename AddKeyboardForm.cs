@@ -9,7 +9,12 @@ internal sealed class AddKeyboardForm : Form
     private readonly DeviceWatcher _watcher;
     private readonly ISet<string> _assignedIds;
 
-    private readonly Label _prompt = new() { AutoSize = false, Width = 400, Height = 60, TextAlign = ContentAlignment.MiddleCenter };
+    private readonly Label _step = new() { AutoSize = true, ForeColor = SystemColors.GrayText, Margin = new Padding(3, 0, 3, 4) };
+    private readonly Label _glyph = new() { Text = "⌨", AutoSize = false, Width = 400, Height = 56, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(0x25, 0x63, 0xEB) };
+    private readonly Label _prompt = new() { AutoSize = false, Width = 400, Height = 32, TextAlign = ContentAlignment.MiddleCenter };
+    private readonly Label _waiting = new() { AutoSize = false, Width = 400, Height = 40, TextAlign = ContentAlignment.TopCenter, ForeColor = SystemColors.GrayText };
+    private readonly System.Windows.Forms.Timer _dots = new() { Interval = 400 };
+    private int _dotCount;
     private readonly TableLayoutPanel _details = new() { AutoSize = true, ColumnCount = 2, Visible = false, Padding = new Padding(8) };
     private readonly TextBox _name = new() { Width = 300 };
     private readonly ComboBox _layout = new() { Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -23,6 +28,9 @@ internal sealed class AddKeyboardForm : Form
     private bool _swallowKeys = true;
 
     public KeyboardRule? Result { get; private set; }
+
+    /// <summary>Set when the pressed keyboard is already in the list; the dialog then closes with Cancel.</summary>
+    public string? ExistingHardwareId { get; private set; }
 
     public AddKeyboardForm(DeviceWatcher watcher, ISet<string> assignedIds)
     {
@@ -39,8 +47,17 @@ internal sealed class AddKeyboardForm : Form
         Padding = new Padding(12);
         CancelButton = _cancel;
 
-        _prompt.Text = "Press any key on the keyboard you want to add…";
-        _prompt.Font = new Font(Font.FontFamily, 11f);
+        _step.Text = "Step 1 of 2 · Identify the keyboard";
+        _glyph.Font = new Font("Segoe UI Symbol", 28f);
+        _prompt.Text = "Press any key on the keyboard you want to add";
+        _prompt.Font = new Font(Font.FontFamily, 11f, FontStyle.Bold);
+        _waiting.Text = "Waiting for a key press";
+        _dots.Tick += (_, _) =>
+        {
+            _dotCount = (_dotCount + 1) % 4;
+            _waiting.Text = "Waiting for a key press" + new string('.', _dotCount) + "\nA Bluetooth keyboard must be connected first.";
+        };
+        _dots.Start();
 
         _details.Controls.Add(new Label { Text = "Name:", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
         _details.Controls.Add(_name, 1, 0);
@@ -56,7 +73,10 @@ internal sealed class AddKeyboardForm : Form
         buttons.Controls.Add(_ok);
 
         var root = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        root.Controls.Add(_step);
+        root.Controls.Add(_glyph);
         root.Controls.Add(_prompt);
+        root.Controls.Add(_waiting);
         root.Controls.Add(_details);
         root.Controls.Add(buttons);
         Controls.Add(root);
@@ -77,11 +97,14 @@ internal sealed class AddKeyboardForm : Form
         _watcher.KeyFromDevice -= OnKeyFromDevice;
         _watcher.StopCapture();
 
+        _dots.Stop();
+
         var hardwareId = Keyboards.ToHardwareId(devicePath);
         if (_assignedIds.Contains(hardwareId))
         {
-            MessageBox.Show(this, "This keyboard is already in the list. Select it there to change its layout.",
+            MessageBox.Show(this, "This keyboard is already in the list. It will be selected so you can change its layout.",
                 Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ExistingHardwareId = hardwareId;
             DialogResult = DialogResult.Cancel;
             return;
         }
@@ -94,7 +117,11 @@ internal sealed class AddKeyboardForm : Form
         var currentIndex = _layouts.FindIndex(l => l.Handle == current);
         _layout.SelectedIndex = currentIndex >= 0 ? currentIndex : (_layouts.Count > 0 ? 0 : -1);
 
-        _prompt.Text = "Keyboard detected. Choose the layout it should use:";
+        _step.Text = "Step 2 of 2 · Name it and choose a layout";
+        _glyph.Text = "✔";
+        _glyph.ForeColor = Color.FromArgb(0x15, 0x80, 0x3D);
+        _prompt.Text = "Keyboard detected";
+        _waiting.Visible = false;
         _details.Visible = true;
         _ok.Enabled = _layouts.Count > 0;
         AcceptButton = _ok;
@@ -130,6 +157,7 @@ internal sealed class AddKeyboardForm : Form
     {
         _watcher.KeyFromDevice -= OnKeyFromDevice;
         _watcher.StopCapture();
+        _dots.Dispose();
         base.OnFormClosed(e);
     }
 }
