@@ -3,8 +3,20 @@ namespace KeyboardLayoutSwitcher;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        ApplicationConfiguration.Initialize();
+
+        if (args.Contains(Installer.UninstallArgument, StringComparer.OrdinalIgnoreCase))
+        {
+            Installer.Uninstall();
+            return;
+        }
+
+        // Started from a download: offer to install, and hand over to the installed copy.
+        if (Installer.ShouldOfferInstall() && Installer.InstallOrUpdate())
+            return;
+
         using var mutex = new Mutex(true, @"Local\KeyboardLayoutSwitcher.SingleInstance", out var isFirstInstance);
         if (!isFirstInstance)
         {
@@ -13,7 +25,6 @@ internal static class Program
             return;
         }
 
-        ApplicationConfiguration.Initialize();
         Application.Run(new TrayApp());
     }
 }

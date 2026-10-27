@@ -18,6 +18,8 @@ internal sealed class TrayApp : ApplicationContext
     // Bluetooth keyboards stay present in Windows when they disconnect, so no device event fires.
     // Polling their connection state every 2 seconds catches that.
     private readonly System.Windows.Forms.Timer _poll = new() { Interval = 2000 };
+    // Set by the installer when it needs to replace or remove this exe.
+    private readonly EventWaitHandle _exitSignal = new(false, EventResetMode.AutoReset, Installer.ExitEventName);
     private SettingsForm? _settings;
     private string? _iconCode;
 
@@ -68,7 +70,16 @@ internal sealed class TrayApp : ApplicationContext
             _debounce.Stop();
             _debounce.Start();
         };
-        _poll.Tick += (_, _) => Evaluate(force: false, notify: true);
+        _poll.Tick += (_, _) =>
+        {
+            if (_exitSignal.WaitOne(0))
+            {
+                Log.Write("Exit requested by the installer");
+                ExitThread();
+                return;
+            }
+            Evaluate(force: false, notify: true);
+        };
         _poll.Start();
 
         SystemEvents.SessionSwitch += OnSessionSwitch;
@@ -260,6 +271,7 @@ internal sealed class TrayApp : ApplicationContext
             _tray.Dispose();
             _debounce.Dispose();
             _poll.Dispose();
+            _exitSignal.Dispose();
             _watcher.Dispose();
             _tray.Icon?.Dispose();
         }

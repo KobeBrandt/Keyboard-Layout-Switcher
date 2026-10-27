@@ -8,7 +8,16 @@ internal static class Startup
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "KeyboardLayoutSwitcher";
 
-    private static string Command => $"\"{Environment.ProcessPath}\"";
+    private static string Command => CommandFor(Environment.ProcessPath ?? "");
+
+    private static string CommandFor(string exePath) => $"\"{exePath}\"";
+
+    /// <summary>Turns start with Windows on for another exe, such as the installed copy.</summary>
+    public static void Register(string exePath)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(RunKey);
+        key.SetValue(ValueName, CommandFor(exePath));
+    }
 
     public static bool IsEnabled
     {
