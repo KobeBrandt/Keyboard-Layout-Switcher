@@ -191,30 +191,61 @@ internal sealed class TrayApp : ApplicationContext
         oldIcon?.Dispose();
     }
 
-    /// <summary>Draws a small key cap with the layout's country code, e.g. "US" or "BE".</summary>
+    /// <summary>
+    /// Draws a key cap with the layout's country code, e.g. "US" or "BE". A number at the end ("US2")
+    /// is drawn as dots under the letters, because a third character is unreadable at 16 x 16.
+    /// </summary>
     internal static Icon CreateIcon(string text, int size = 32)
     {
+        var letters = text.TrimEnd("0123456789".ToCharArray());
+        if (letters.Length == 0)
+            letters = text;
+        var variant = letters.Length < text.Length && int.TryParse(text[letters.Length..], out var number) ? number : 1;
+        var dots = variant > 1 ? Math.Min(variant, 3) : 0;
+
         using var bitmap = new Bitmap(size, size);
         using (var g = Graphics.FromImage(bitmap))
         {
-            // Draw in a 32 x 32 grid and scale it to the requested size.
-            g.ScaleTransform(size / 32f, size / 32f);
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-            using var path = new GraphicsPath();
-            const int r = 7;
-            path.AddArc(1, 1, r * 2, r * 2, 180, 90);
-            path.AddArc(30 - r * 2, 1, r * 2, r * 2, 270, 90);
-            path.AddArc(30 - r * 2, 30 - r * 2, r * 2, r * 2, 0, 90);
-            path.AddArc(1, 30 - r * 2, r * 2, r * 2, 90, 90);
-            path.CloseFigure();
-            using var fill = new SolidBrush(Color.FromArgb(0x25, 0x63, 0xEB));
-            g.FillPath(fill, path);
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-            var fontSize = text.Length switch { <= 1 => 16f, 2 => 13f, _ => 10f };
-            using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            g.DrawString(text, font, Brushes.White, new RectangleF(0, 1, 32, 32), format);
+            // The tile fills the whole icon: at 16 x 16 every pixel counts.
+            using var tile = RoundedRectangle(new RectangleF(0, 0, size, size), size * 0.22f);
+            using var fill = new SolidBrush(Color.FromArgb(0x25, 0x63, 0xEB));
+            g.FillPath(fill, tile);
+
+            // Scale the letters to fill the tile instead of using a fixed font size,
+            // and snap their height to whole pixels so the edges stay sharp.
+            var boxWidth = size * 0.78f;
+            var boxHeight = MathF.Round(size * (dots > 0 ? 0.46f : 0.56f));
+            var top = MathF.Round(size * (dots > 0 ? 0.40f : 0.5f) - boxHeight / 2);
+            using var glyphs = new GraphicsPath();
+            using (var family = new FontFamily("Segoe UI"))
+                glyphs.AddString(letters, family, (int)FontStyle.Bold, 100, PointF.Empty, StringFormat.GenericTypographic);
+            var bounds = glyphs.GetBounds();
+            var scale = Math.Min(boxWidth / bounds.Width, boxHeight / bounds.Height);
+            using var transform = new Matrix();
+            transform.Translate((size - bounds.Width * scale) / 2, top + (boxHeight - bounds.Height * scale) / 2);
+            transform.Scale(scale, scale);
+            transform.Translate(-bounds.X, -bounds.Y);
+            glyphs.Transform(transform);
+            g.FillPath(Brushes.White, glyphs);
+
+            if (dots > 0)
+            {
+                var diameter = Math.Max(2f, MathF.Round(size * 0.12f));
+                var gap = diameter;
+                var x = MathF.Round((size - (dots * diameter + (dots - 1) * gap)) / 2);
+                var y = MathF.Round(size * 0.80f - diameter / 2);
+                for (var i = 0; i < dots; i++, x += diameter + gap)
+                {
+                    // Small dots look like blurry blobs when round; squares stay crisp.
+                    if (diameter < 3)
+                        g.FillRectangle(Brushes.White, x, y, diameter, diameter);
+                    else
+                        g.FillEllipse(Brushes.White, x, y, diameter, diameter);
+                }
+            }
         }
         // Clone so the returned icon owns its handle and Dispose frees it.
         var handle = bitmap.GetHicon();
@@ -222,6 +253,18 @@ internal sealed class TrayApp : ApplicationContext
         var icon = (Icon)temporary.Clone();
         Native.DestroyIcon(handle);
         return icon;
+    }
+
+    private static GraphicsPath RoundedRectangle(RectangleF bounds, float radius)
+    {
+        var diameter = radius * 2;
+        var path = new GraphicsPath();
+        path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+        path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+        path.CloseFigure();
+        return path;
     }
 
     private void ShowSettings()

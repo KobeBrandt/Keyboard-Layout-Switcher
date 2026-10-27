@@ -64,7 +64,8 @@ repository root to draw it again after changing the script.
   When such a window has focus, the switch is applied as soon as you move to another window.
 - Keyboards are recognized by model (vendor and product ID), not by individual device. Two keyboards
   of the same model count as one keyboard, so they cannot get different layouts.
-- When several installed layouts share a country code, the tray icon numbers them, e.g. "US" and "US2".
+- When several installed layouts share a country code, the tray icon marks the second one with two dots
+  under the code, the third with three dots. The tooltip shows the full layout name.
 
 ## License
 
