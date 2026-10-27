@@ -6,7 +6,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Needed by the code that [LibraryImport] generates. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <AssemblyName>KeyboardLayoutSwitcher</AssemblyName>
     <RootNamespace>KeyboardLayoutSwitcher</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>

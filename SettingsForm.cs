@@ -61,7 +61,8 @@ internal sealed class SettingsForm : Form
         ClientSize = new Size(640, 580);
         MinimumSize = new Size(540, 540);
         Padding = new Padding(12);
-        Icon = TrayApp.CreateIcon("KB");
+        Icon = (Environment.ProcessPath != null ? Icon.ExtractAssociatedIcon(Environment.ProcessPath) : null)
+            ?? TrayApp.CreateIcon("KB");
 
         _list.Columns.Add("Keyboard");
         _list.Columns.Add("Layout");
